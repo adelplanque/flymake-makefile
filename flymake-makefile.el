@@ -42,7 +42,7 @@
 
 ;;; Code:
 
-(require 'cl-lib)
+(eval-when-compile (require 'cl-lib))
 (require 'flymake)
 
 (defgroup flymake-makefile nil
