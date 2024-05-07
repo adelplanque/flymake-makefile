@@ -156,7 +156,6 @@ reported by calling REPORT-FN."
                collect (flymake-make-diagnostic buf beg end :error
                                                 (concat (match-string 2) ": " (match-string 3)))
                into diags
-               do (message "found lineno: %s, msg; %s" (match-string 1) (match-string 3))
                finally (funcall report-fn diags)))
           (flymake-log :warning "Canceling obsolete check %s" proc))
       (kill-buffer (process-buffer proc))
