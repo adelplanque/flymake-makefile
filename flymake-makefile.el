@@ -228,7 +228,7 @@ Takes a Flymake callback REPORT-FN as argument."
            :name "checkmake"
            :buffer (generate-new-buffer " *flymake-makefile-checkmake*")
            :command `(,flymake-makefile-checkmake-executable
-                      "--format={{.LineNumber}}:{{.Rule}}:{{.Violation}}"
+                      "--format={{.LineNumber}}:{{.Rule}}:{{.Violation}}{{\"\\n\"}}"
                       ,flymake-makefile--checkmake-temp-filename)
            :sentinel (lambda (proc _event)
                        (flymake-makefile--checkmake-report report-fn (current-buffer) proc))))))
