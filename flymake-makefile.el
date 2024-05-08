@@ -81,6 +81,13 @@
 (defvar-local flymake-makefile--checkmake-temp-filename nil
   "Current temporary filename use to write buffer for checkmake.")
 
+(defconst flymake-makefile--checkmake-rules-alist
+  '(("maxbodylength" . :note)
+    ("minphony" . :warning)
+    ("phonydeclared" . :warning)
+    ("timestampexpanded" . :warning))
+  "An alist associating checkmake rule with error level.")
+
 (defun flymake-makefile--create-temp-copy (var-name suffix)
   "Store content of buffer to a file.
 Temporary file name is creating by appending SUFFIX to the buffer file name, and
@@ -153,8 +160,11 @@ reported by calling REPORT-FN."
                       "^\\([0-9]+\\):\\([[:alnum:]]*\\):\\(.*\\)$"
                       nil t)
                for (beg . end) = (flymake-diag-region buf (string-to-number (match-string 1)))
-               collect (flymake-make-diagnostic buf beg end :error
-                                                (concat (match-string 2) ": " (match-string 3)))
+               collect (flymake-make-diagnostic
+                        buf beg end
+                        (or (cdr (assoc (match-string 2) flymake-makefile--checkmake-rules-alist))
+                            :warning)
+                        (concat (match-string 2) ": " (match-string 3)))
                into diags
                finally (funcall report-fn diags)))
           (flymake-log :warning "Canceling obsolete check %s" proc))
