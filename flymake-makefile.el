@@ -35,7 +35,7 @@
 ;;   Makefiles, for more details see:
 ;;       https://github.com/mrtazz/checkmake
 
-;; Warning:
+;; Admonition:
 
 ;; Be careful, make backend can lead to a security risk, as the execution of
 ;; untrusted makefiles can lead to the execution of malicious code, and is
@@ -46,6 +46,15 @@
 
 ;;     ;;; .dir-locals.el
 ;;     ((makefile-mode . ((flymake-makefile-use-make-backend . t))))
+
+;; By default the make command is run in a firejail sandbox, restricting
+;; read-only access to the user's directory.  Firejail can be installed from
+;; most Linux distributions.
+
+;;     # Executing this Makefile will have no side effect
+;;     my-var := $(shell echo attack > attack)
+;;     target:
+;;         some-action
 
 ;; Usage:
 
@@ -71,6 +80,11 @@
   :group 'flymake-executable
   :type 'string)
 
+(defcustom flymake-makefile-firejail-executable (executable-find "firejail")
+  "Name of the ‘firejail’ executable."
+  :group 'flymake-executable
+  :type 'string)
+
 (defcustom flymake-makefile-use-make-backend nil
   "Should the make command be used as a flymake backend.
 Be aware that enabling this backend will execute make on the makefile, this can
@@ -78,6 +92,13 @@ cause in strong side effect, especially enabling it on an untrusted makefile can
 be a security issue."
   :group 'flymake-makefile
   :type 'bool)
+
+(defcustom flymake-makefile-use-firejail t
+  "Should the make command be sandboxed with Firejail ?
+By default, the make command is run with restricted permission (read-only HOME
+file system) using Firejail."
+  :group 'flymake-makefile
+  :type 'string)
 
 (defcustom flymake-makefile-use-checkmake-backend t
   "Should the checkmake command be used as a flymake backend."
@@ -146,6 +167,8 @@ reported by calling REPORT-FN."
   "Flymake backend using make program.
 Works by invoking make with a dummy target to detect syntax errors.
 Takes a Flymake callback REPORT-FN as argument."
+  (when flymake-makefile-use-firejail
+    (unless flymake-makefile-firejail-executable (error "Cannot find firejail executable")))
   (when (process-live-p flymake-makefile--make-proc)
     (kill-process flymake-makefile--make-proc))
   (unless flymake-makefile-make-executable (error "Cannot find make executable"))
@@ -156,8 +179,12 @@ Takes a Flymake callback REPORT-FN as argument."
           (make-process
            :name "make"
            :buffer (generate-new-buffer " *flymake-makefile*")
-           :command `(,flymake-makefile-make-executable
-                      "-f" ,flymake-makefile--make-temp-filename "dummy-flymake-target")
+           :command (append (when flymake-makefile-use-firejail
+                              `("firejail" "--quiet" "--noprofile" "--caps.drop=all" "--seccomp"
+                                "--noroot" ,(concat "--read-only=" (expand-file-name "~"))))
+                            `(,flymake-makefile-make-executable
+                              "-f" ,flymake-makefile--make-temp-filename
+                              "dummy-flymake-target"))
            :sentinel (lambda (proc _event)
                        (flymake-makefile--make-report report-fn (current-buffer) proc))))))
 
