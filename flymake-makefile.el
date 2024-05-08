@@ -6,8 +6,8 @@
 ;; Author: Alain Delplanque <alaindelplanque@mailoo.org>
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "27.1"))
-;; Keywords:
-;; URL: https://github.com/adelplanque/flymake-meson-build
+;; Keywords: tools, flymake
+;; URL: https://github.com/adelplanque/flymake-makefile
 
 ;; This file is NOT part of GNU Emacs.
 
