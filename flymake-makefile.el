@@ -35,10 +35,22 @@
 ;;   Makefiles, for more details see:
 ;;       https://github.com/mrtazz/checkmake
 
+;; Warning:
+
+;; Be careful, make backend can lead to a security risk, as the execution of
+;; untrusted makefiles can lead to the execution of malicious code, and is
+;; disable by default.
+
+;; To enable it you must set `flymake-makefile-use-make-backend' to t. This can
+;; be done per directory:
+
+;;     ;;; .dir-locals.el
+;;     ((makefile-mode . ((flymake-makefile-use-make-backend . t))))
+
 ;; Usage:
 
-;; (require 'flymake-makefile)
-;; (add-hook 'makefile-mode-hook #'flymake-makefile-setup)
+;;     (require 'flymake-makefile)
+;;     (add-hook 'makefile-mode-hook #'flymake-makefile-mode-hook)
 
 ;;; Code:
 
@@ -59,8 +71,11 @@
   :group 'flymake-executable
   :type 'string)
 
-(defcustom flymake-makefile-use-make-backend t
-  "Should the make command be used as a flymake backend."
+(defcustom flymake-makefile-use-make-backend nil
+  "Should the make command be used as a flymake backend.
+Be aware that enabling this backend will execute make on the makefile, this can
+cause in strong side effect, especially enabling it on an untrusted makefile can
+be a security issue."
   :group 'flymake-makefile
   :type 'bool)
 
@@ -199,6 +214,14 @@ Takes a Flymake callback REPORT-FN as argument."
       (add-hook 'flymake-diagnostic-functions #'flymake-makefile--backend-make nil t))
   (if flymake-makefile-use-checkmake-backend
       (add-hook 'flymake-diagnostic-functions #'flymake-makefile--backend-checkmake nil t)))
+
+;;;###autoload
+(defun flymake-makefile-mode-hook ()
+  "Hook for `makefile-mode' to setup flymake backend.
+Due to loading local variables after mode hooks, delegate the configuration as
+`hack-local-variables-hook'.  This allows customize configuration by directories
+using .dir-locals.el."
+  (add-hook 'hack-local-variables-hook #'flymake-makefile-setup nil t))
 
 (provide 'flymake-makefile)
 ;;; flymake-makefile.el ends here
